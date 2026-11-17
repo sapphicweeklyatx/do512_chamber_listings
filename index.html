@@ -72,6 +72,18 @@
     padding: 8px 24px;
   }
 
+  /* Flyer link bar */
+  .flyerbar {
+    display: flex; align-items: center; gap: 12px;
+    background: #FFE3F2; color: var(--ink); text-decoration: none;
+    padding: 12px 24px; border-bottom: 1px solid #F7C6E1;
+  }
+  .flyerbar:hover { background: #FFD3EA; }
+  .flyerbar strong { color: var(--pink-dark); display: block; font-size: 15px; }
+  .flyerbar-sub { display: block; font-size: 12.5px; color: var(--muted); }
+  .flyerbar-icon { font-size: 22px; }
+  .flyerbar-arrow { margin-left: auto; font-size: 20px; color: var(--pink-dark); font-weight: 700; }
+
   /* Layout */
   main {
     display: grid;
@@ -302,6 +314,11 @@
     </div>
   </header>
   <div class="notice">PROPRIETARY - internal tool for Sapphic Weekly ATX organizers. Please don't share outside the team.</div>
+  <a class="flyerbar" id="flyerLink" href="/canva_links/" target="_blank" rel="noopener">
+    <span class="flyerbar-icon" aria-hidden="true">🎨</span>
+    <span><strong>Download platform-specific flyers here</strong><span class="flyerbar-sub" id="flyerSub">Canva links sized for Instagram, Eventbrite, Meetup, and the Austin Chronicle</span></span>
+    <span class="flyerbar-arrow" aria-hidden="true">&rarr;</span>
+  </a>
 
   <main>
     <!-- ===== INPUTS ===== -->
@@ -1007,7 +1024,15 @@
       });
   }
 
+  function setFlyerLink(e) {
+    $("flyerLink").href = "/canva_links/" + (e && e.id ? "?event=" + encodeURIComponent(e.id) : "");
+    $("flyerSub").textContent = e && e.title
+      ? "Open the Canva links for " + e.title
+      : "Canva links sized for Instagram, Eventbrite, Meetup, and the Austin Chronicle";
+  }
+
   function fillFromEvent(e) {
+    setFlyerLink(e);
     $("listingName").value = e.title || "";
     $("venue").value = e.venue || "";
     $("address").value = e.address || "";
@@ -1087,6 +1112,7 @@
     state.games = false;
     state.pool = false;
     $("eventPick").value = "";
+    setFlyerLink(null);
     render();
     toast("Form cleared");
   });
