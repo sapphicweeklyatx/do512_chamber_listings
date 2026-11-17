@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Do512 &amp; Chamber Listing Generator | Sapphic Weekly ATX</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --pink: #FA0F94;
+    --pink-dark: #CC0066;
+    --purple: #5B2A86;
+    --ink: #111111;
+    --paper: #FFF7FB;
+    --line: #E9D3E0;
+    --muted: #6B5A66;
+    --ok: #1E7F4F;
+    --warn: #B45309;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    color: var(--ink);
+    background: var(--paper);
+    line-height: 1.5;
+  }
+  h1, h2, h3 { font-family: Anton, Impact, sans-serif; font-weight: 400; letter-spacing: .5px; text-transform: uppercase; margin: 0; }
+  a { color: var(--pink-dark); }
+
+  /* Header */
+  header.top {
+    background: var(--ink);
+    color: #fff;
+    padding: 18px 24px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  header.top h1 { font-size: 26px; line-height: 1.1; }
+  header.top h1 span { color: var(--pink); }
+  header.top .sub { font-size: 13px; color: #d9c7d2; margin-top: 4px; }
+
+  .mode-toggle {
+    display: inline-flex;
+    background: #2a2a2a;
+    border-radius: 999px;
+    padding: 4px;
+    gap: 4px;
+  }
+  .mode-toggle button {
+    border: 0;
+    background: transparent;
+    color: #fff;
+    font: 600 14px Inter, sans-serif;
+    padding: 10px 18px;
+    border-radius: 999px;
+    cursor: pointer;
+  }
+  .mode-toggle button[aria-pressed="true"] { background: var(--pink); }
+
+  .notice {
+    background: var(--purple);
+    color: #fff;
+    font-size: 12.5px;
+    padding: 8px 24px;
+  }
+
+  /* Layout */
+  main {
+    display: grid;
+    grid-template-columns: minmax(300px, 420px) 1fr;
+    gap: 24px;
+    padding: 24px;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+  @media (max-width: 900px) {
+    main { grid-template-columns: 1fr; padding: 16px; }
+  }
+  .card {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 20px;
+  }
+  .card + .card { margin-top: 20px; }
+  .card h2 { font-size: 20px; margin-bottom: 14px; }
+  .card h2 small { font-family: Inter, sans-serif; font-size: 12px; text-transform: none; color: var(--muted); letter-spacing: 0; margin-left: 6px; }
+
+  /* Form */
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+  .field .hint { font-size: 12px; color: var(--muted); margin-top: 3px; }
+  .field input[type="text"],
+  .field input[type="url"],
+  .field input[type="date"],
+  .field input[type="time"],
+  .field select,
+  .field textarea {
+    width: 100%;
+    font: 15px Inter, sans-serif;
+    padding: 10px 12px;
+    border: 1px solid #d8c3cf;
+    border-radius: 8px;
+    background: #fff;
+    color: var(--ink);
+  }
+  .field textarea { min-height: 84px; resize: vertical; }
+  .field input:focus, .field select:focus, .field textarea:focus {
+    outline: 2px solid var(--pink);
+    outline-offset: 1px;
+    border-color: var(--pink);
+  }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .req { color: var(--pink-dark); }
+
+  .yn { display: inline-flex; border: 1px solid #d8c3cf; border-radius: 8px; overflow: hidden; }
+  .yn button {
+    border: 0;
+    background: #fff;
+    font: 600 14px Inter, sans-serif;
+    padding: 8px 18px;
+    cursor: pointer;
+    color: var(--ink);
+  }
+  .yn button[aria-pressed="true"] { background: var(--ink); color: #fff; }
+  .yn button + button { border-left: 1px solid #d8c3cf; }
+
+  details.optional { border-top: 1px dashed var(--line); padding-top: 12px; margin-top: 6px; }
+  details.optional summary { cursor: pointer; font-weight: 600; font-size: 14px; color: var(--purple); margin-bottom: 10px; }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 0;
+    border-radius: 999px;
+    padding: 10px 18px;
+    font: 600 14px Inter, sans-serif;
+    cursor: pointer;
+    background: var(--pink);
+    color: #fff;
+  }
+  .btn.secondary { background: #fff; color: var(--ink); border: 1px solid #d8c3cf; }
+  .btn.small { padding: 6px 12px; font-size: 12.5px; }
+  .btn:active { transform: translateY(1px); }
+
+  /* Output */
+  .meta-grid { display: grid; gap: 12px; }
+  .meta-item { border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
+  .meta-item .label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .meta-item .value { margin-top: 6px; font-size: 15px; word-break: break-word; }
+  .count { font-weight: 600; font-size: 12px; }
+  .count.over { color: var(--warn); }
+
+  .tabs { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; align-items: center; }
+  .tabs .tab {
+    border: 1px solid #d8c3cf;
+    background: #fff;
+    border-radius: 999px;
+    padding: 7px 14px;
+    font: 600 13px Inter, sans-serif;
+    cursor: pointer;
+  }
+  .tabs .tab[aria-selected="true"] { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .tabs .spacer { flex: 1; }
+
+  .preview {
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 18px 20px;
+    background: #fff;
+    font-size: 15px;
+    min-height: 200px;
+  }
+  .preview.do512 h2 { font-family: Anton, Impact, sans-serif; font-size: 26px; margin: 18px 0 8px; }
+  .preview.chamber { font-family: Arial, Helvetica, sans-serif; color: #333; }
+  .preview .ph { background: #FFE3F2; color: var(--pink-dark); border-radius: 4px; padding: 0 4px; font-weight: 600; }
+
+  pre.code {
+    margin: 0;
+    background: #1b1b1b;
+    color: #f5e9f0;
+    border-radius: 10px;
+    padding: 16px;
+    font: 12.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 520px;
+    overflow: auto;
+  }
+
+  .warnings { margin: 0 0 14px; padding: 0; list-style: none; }
+  .warnings li {
+    background: #FFF4E5;
+    border: 1px solid #F6D3A6;
+    color: #7A3E00;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 13.5px;
+    margin-bottom: 6px;
+  }
+
+  .checklist { list-style: none; padding: 0; margin: 0; }
+  .checklist li { display: flex; gap: 10px; align-items: flex-start; padding: 7px 0; border-bottom: 1px solid #f3e6ee; font-size: 14px; }
+  .checklist li:last-child { border-bottom: 0; }
+  .checklist input { margin-top: 3px; accent-color: var(--pink); width: 16px; height: 16px; flex-shrink: 0; }
+
+  .toast {
+    position: fixed;
+    left: 50%;
+    bottom: 24px;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--ink);
+    color: #fff;
+    padding: 10px 18px;
+    border-radius: 999px;
+    font-size: 14px;
+    opacity: 0;
+    transition: opacity .2s, transform .2s;
+    pointer-events: none;
+    z-index: 50;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  footer.foot { text-align: center; font-size: 12px; color: var(--muted); padding: 10px 24px 30px; }
+
+  /* PIN gate */
+  #gate {
+    position: fixed;
+    inset: 0;
+    background: var(--ink);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    padding: 20px;
+  }
+  #gate .box {
+    background: #fff;
+    border-radius: 16px;
+    padding: 28px;
+    width: 100%;
+    max-width: 380px;
+    text-align: center;
+  }
+  #gate h2 { font-size: 24px; margin-bottom: 6px; }
+  #gate p { font-size: 13px; color: var(--muted); margin: 0 0 16px; }
+  #gate input {
+    width: 100%;
+    font: 600 22px Inter, sans-serif;
+    letter-spacing: 10px;
+    text-align: center;
+    padding: 12px;
+    border: 1px solid #d8c3cf;
+    border-radius: 10px;
+    margin-bottom: 12px;
+  }
+  #gate .err { color: #B00020; font-size: 13px; min-height: 18px; margin-bottom: 8px; }
+  #app[hidden] { display: none; }
+</style>
+</head>
+<body>
+
+<!-- ===== PIN GATE ===== -->
+<div id="gate">
+  <form class="box" id="gateForm" autocomplete="off">
+    <h2>Team Access</h2>
+    <p>Enter your 4-digit organizer PIN to open the Do512 &amp; Chamber Listing Generator.</p>
+    <input id="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" aria-label="4-digit PIN" required>
+    <div class="err" id="pinErr" role="alert"></div>
+    <button class="btn" type="submit" style="width:100%;justify-content:center;">PIN Unlock</button>
+    <p style="margin:16px 0 0;font-size:11.5px;">PROPRIETARY: For Sapphic Weekly ATX organizers only. Access is individual. Please don't share this tool or your PIN outside the team.</p>
+  </form>
+</div>
+
+<div id="app" hidden>
+  <header class="top">
+    <div>
+      <h1>Sapphic Weekly ATX <span>Listing Generator</span></h1>
+      <div class="sub">SEO-ready descriptions for Do512 and the Austin LGBT Chamber of Commerce</div>
+    </div>
+    <div class="mode-toggle" role="group" aria-label="Listing platform">
+      <button type="button" data-mode="do512" aria-pressed="true">Do512</button>
+      <button type="button" data-mode="chamber" aria-pressed="false">Austin LGBT Chamber</button>
+    </div>
+  </header>
+  <div class="notice">PROPRIETARY - internal tool for Sapphic Weekly ATX organizers. Please don't share outside the team.</div>
+
+  <main>
+    <!-- ===== INPUTS ===== -->
+    <section>
+      <div class="card">
+        <h2>Event details</h2>
+
+        <div class="field">
+          <label for="listingName">Event listing name <span class="req">*</span></label>
+          <input id="listingName" type="text" placeholder="e.g., Lesbian Night Golden Hour at The Golden Horn">
+          <div class="hint">Copy it exactly from the Event Listings Tracker.</div>
+        </div>
+
+        <div class="field">
+          <label for="venue">Venue name <span class="req">*</span></label>
+          <input id="venue" type="text" placeholder="e.g., The Golden Horn">
+          <div class="hint">Must match the Event Host Tracking tab exactly.</div>
+        </div>
+
+        <div class="field">
+          <label for="address">Street address <span class="req">*</span></label>
+          <input id="address" type="text" placeholder="e.g., 5420 Airport Blvd, Austin, TX">
+        </div>
+
+        <div class="field">
+          <label for="partiful">Partiful link <span class="req">*</span></label>
+          <input id="partiful" type="url" placeholder="https://partiful.com/e/...">
+          <div class="hint">The link for this specific event.</div>
+        </div>
+
+        <div class="field">
+          <label for="date">Date <span class="req">*</span></label>
+          <input id="date" type="date">
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label for="start">Start time <span class="req">*</span></label>
+            <input id="start" type="time" value="20:00">
+          </div>
+          <div class="field">
+            <label for="end">End time <span class="req">*</span></label>
+            <input id="end" type="time" value="22:00">
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label for="price">Price <span class="req">*</span></label>
+            <input id="price" type="text" value="Free">
+            <div class="hint">"Free" or a ticket price like "$15".</div>
+          </div>
+          <div class="field">
+            <label for="age">Age <span class="req">*</span></label>
+            <select id="age">
+              <option value="21+" selected>21+</option>
+              <option value="18+">18+</option>
+              <option value="All ages">All ages</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Games at this venue?</label>
+          <div class="yn" id="gamesYN" role="group" aria-label="Games at this venue">
+            <button type="button" data-val="yes" aria-pressed="false">Yes</button>
+            <button type="button" data-val="no" aria-pressed="true">No</button>
+          </div>
+          <div class="hint">Yard games count.</div>
+        </div>
+
+        <div class="field" id="poolField" hidden>
+          <label>Pool tables specifically?</label>
+          <div class="yn" id="poolYN" role="group" aria-label="Pool tables specifically">
+            <button type="button" data-val="yes" aria-pressed="false">Yes</button>
+            <button type="button" data-val="no" aria-pressed="true">No</button>
+          </div>
+          <div class="hint">Yes swaps in pool-specific wording.</div>
+        </div>
+
+        <div class="field">
+          <label for="vibe">Venue vibe <span class="req">*</span></label>
+          <textarea id="vibe" placeholder="1-2 sentences, written fresh each week. Inserted word for word."></textarea>
+          <div class="hint">This goes into the description exactly as typed, so describe the venue only, not "a lesbian bar on X."</div>
+        </div>
+
+        <details class="optional">
+          <summary>Optional extras</summary>
+          <div class="field">
+            <label for="nbhd">Neighborhood</label>
+            <input id="nbhd" type="text" placeholder="e.g., North Loop, East Austin">
+            <div class="hint">Reads as "in North Loop." Helps local search.</div>
+          </div>
+          <div class="field">
+            <label for="pastUrl">Past hangout link</label>
+            <input id="pastUrl" type="url" placeholder="https://www.sapphicweeklyatx.com/past-hangouts/...">
+          </div>
+          <div class="field">
+            <label for="pastText">Past hangout link text</label>
+            <input id="pastText" type="text" placeholder="e.g., our night at Barfly's">
+            <div class="hint">Descriptive words get linked (better for SEO than "iykyk").</div>
+          </div>
+        </details>
+
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;">
+          <button type="button" class="btn secondary" id="resetBtn">Clear form</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== OUTPUT ===== -->
+    <section>
+      <div class="card">
+        <h2 id="outTitle">Do512 listing</h2>
+        <ul class="warnings" id="warnings"></ul>
+
+        <div class="meta-grid" id="metaGrid"></div>
+      </div>
+
+      <div class="card">
+        <div class="tabs" role="tablist">
+          <button type="button" class="tab" role="tab" data-tab="preview" aria-selected="true">Preview</button>
+          <button type="button" class="tab" role="tab" data-tab="html" aria-selected="false">HTML</button>
+          <span class="spacer"></span>
+          <button type="button" class="btn small" id="copyHtml">Copy HTML</button>
+          <button type="button" class="btn small secondary" id="copyRich">Copy with formatting</button>
+        </div>
+        <div id="previewPane" class="preview do512"></div>
+        <pre id="htmlPane" class="code" hidden></pre>
+        <div class="hint" id="pasteHint" style="font-size:12.5px;color:var(--muted);margin-top:10px;"></div>
+      </div>
+
+      <div class="card">
+        <h2>Before you publish <small id="checkSub">Do512</small></h2>
+        <ul class="checklist" id="checklist"></ul>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">PROPRIETARY &middot; Sapphic Weekly ATX internal tools</footer>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ================= PIN GATE =================
+     SHA-256 hash of the team PIN. To change the PIN, replace this value
+     with the SHA-256 hash of the new 4-digit PIN. */
+  var PIN_HASH = "51c94a510b50e68f490e35edd977845f9b008e3bb1a5c7f0d8eecf8b0b9794bf";
+  var SESSION_KEY = "swatx_listing_gen_unlocked";
+
+  function sha256Hex(text) {
+    var data = new TextEncoder().encode(text);
+    return crypto.subtle.digest("SHA-256", data).then(function (buf) {
+      return Array.from(new Uint8Array(buf)).map(function (b) {
+        return b.toString(16).padStart(2, "0");
+      }).join("");
+    });
+  }
+
+  function unlock() {
+    document.getElementById("gate").remove();
+    document.getElementById("app").hidden = false;
+    render();
+  }
+
+  var unlocked = false;
+  try { unlocked = sessionStorage.getItem(SESSION_KEY) === "1"; } catch (e) {}
+
+  document.getElementById("gateForm").addEventListener("submit", function (ev) {
+    ev.preventDefault();
+    var pin = document.getElementById("pin").value.trim();
+    var err = document.getElementById("pinErr");
+    if (!/^\d{4}$/.test(pin)) { err.textContent = "Enter a 4-digit PIN."; return; }
+    sha256Hex(pin).then(function (h) {
+      if (h === PIN_HASH) {
+        try { sessionStorage.setItem(SESSION_KEY, "1"); } catch (e) {}
+        unlock();
+      } else {
+        err.textContent = "That PIN didn't work. Try again.";
+        document.getElementById("pin").value = "";
+      }
+    }).catch(function () {
+      err.textContent = "This browser can't verify the PIN. Try Chrome or Safari.";
+    });
+  });
+
+  /* ================= STATE ================= */
+  var state = { mode: "do512", tab: "preview", games: false, pool: false };
+  try {
+    var savedMode = localStorage.getItem("swatx_listing_gen_mode");
+    if (savedMode === "do512" || savedMode === "chamber") state.mode = savedMode;
+  } catch (e) {}
+
+  var $ = function (id) { return document.getElementById(id); };
+  var inputIds = ["listingName", "venue", "address", "partiful", "date", "start", "end", "price", "age", "vibe", "nbhd", "pastUrl", "pastText"];
+
+  /* ================= HELPERS ================= */
+  function esc(s) {
+    return String(s)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+  function ph(label) { return '<span class="ph">[' + esc(label) + ']</span>'; }
+
+  function ordinal(n) {
+    var v = n % 100;
+    if (v >= 11 && v <= 13) return n + "th";
+    switch (n % 10) { case 1: return n + "st"; case 2: return n + "nd"; case 3: return n + "rd"; default: return n + "th"; }
+  }
+  var DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  var MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+  function parseDate(v) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) return null;
+    var p = v.split("-").map(Number);
+    var d = new Date(p[0], p[1] - 1, p[2]);
+    return isNaN(d) ? null : d;
+  }
+  function fmtLongDate(d) { return DAYS[d.getDay()] + ", " + MONTHS[d.getMonth()] + " " + ordinal(d.getDate()); }
+  function fmtShortDate(d) { return MONTHS[d.getMonth()] + " " + d.getDate(); }
+
+  function parseTime(v) {
+    if (!/^\d{2}:\d{2}$/.test(v)) return null;
+    var p = v.split(":").map(Number);
+    var h = p[0], m = p[1];
+    var ap = h >= 12 ? "PM" : "AM";
+    var h12 = h % 12 === 0 ? 12 : h % 12;
+    return { label: h12 + (m ? ":" + String(m).padStart(2, "0") : ""), ap: ap };
+  }
+  // style "do512": "8-10 PM"; style "chamber": "8-10pm"
+  function fmtRange(s, e, style) {
+    var a = parseTime(s), b = parseTime(e);
+    if (!a || !b) return null;
+    var fmtAp = function (ap) { return style === "chamber" ? ap.toLowerCase() : " " + ap; };
+    if (a.ap === b.ap) return a.label + "-" + b.label + fmtAp(b.ap);
+    return a.label + fmtAp(a.ap) + "-" + b.label + fmtAp(b.ap);
+  }
+
+  function slugify(s) {
+    return String(s).toLowerCase()
+      .replace(/&/g, " and ")
+      .replace(/['’]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .replace(/^the-/, "");
+  }
+  function endPunct(s) {
+    s = s.trim();
+    if (!s) return s;
+    return /[.!?)"”]$/.test(s) ? s : s + ".";
+  }
+  function isFree(p) { return /^\s*free\s*$/i.test(p); }
+
+  /* ================= READ INPUTS ================= */
+  function read() {
+    var d = {};
+    inputIds.forEach(function (id) { d[id] = ($(id).value || "").trim(); });
+    d.games = state.games;
+    d.pool = state.games && state.pool;
+    return d;
+  }
+
+  /* ================= BUILD ================= */
+  // Each value has two forms: html (escaped) for output, and preview (placeholder if missing).
+  function build(d, forPreview) {
+    var V = function (val, label) { return val ? esc(val) : (forPreview ? ph(label) : "[" + label + "]"); };
+
+    var dateObj = parseDate(d.date);
+    var longDate = dateObj ? fmtLongDate(dateObj) : null;
+    var shortDate = dateObj ? fmtShortDate(dateObj) : null;
+    var timeDo = fmtRange(d.start, d.end, "do512");
+    var timeCh = fmtRange(d.start, d.end, "chamber");
+
+    var listing = V(d.listingName, "Event listing name");
+    var venue = V(d.venue, "Venue name");
+    var address = V(d.address, "Street address");
+    var dateTxt = longDate ? esc(longDate) : (forPreview ? ph("Date") : "[Date]");
+    var timeDoTxt = timeDo ? esc(timeDo) : (forPreview ? ph("Time") : "[Time]");
+    var timeChTxt = timeCh ? esc(timeCh) : (forPreview ? ph("Time") : "[Time]");
+    var vibe = d.vibe ? esc(endPunct(d.vibe)) : (forPreview ? ph("Venue vibe") : "[Venue vibe]");
+    var priceRaw = d.price || "Free";
+    var price = esc(priceRaw);
+    var free = isFree(priceRaw);
+    var age = esc(d.age || "21+");
+    var partiful = d.partiful ? esc(d.partiful) : "#";
+    var nb = d.nbhd ? " in " + esc(d.nbhd) : "";
+
+    var listingHasVenue = d.listingName && d.venue &&
+      d.listingName.toLowerCase().indexOf(d.venue.toLowerCase()) !== -1;
+
+    var pastLink = "";
+    var hasPast = !!d.pastUrl;
+    var pastText = esc(d.pastText || "our last hangout");
+
+    var SITE = "https://www.sapphicweeklyatx.com";
+    var LB = SITE + "/lesbian-bar-austin";
+    var IG = "https://www.instagram.com/sapphicweeklyatx";
+
+    if (state.mode === "do512") {
+      var gameSentence = d.pool
+        ? " Rack up a game of pool and meet someone new over the table."
+        : d.games ? " There will be games at the venue too, so come ready to play and meet someone new." : "";
+      if (hasPast) pastLink = ' Catch the recap from <a href="' + esc(d.pastUrl) + '">' + pastText + "</a>.";
+
+      var opener = listingHasVenue
+        ? "Sapphic Weekly ATX, Austin's lesbian social club and rotating lesbian bar, is hosting <strong>" + listing + "</strong>" + nb + "."
+        : "Sapphic Weekly ATX, Austin's lesbian social club and rotating lesbian bar, is popping up at " + venue + nb + " for <strong>" + listing + "</strong>.";
+
+      var bullets = [
+        "Drinks, conversation, and new faces from Austin's sapphic community"
+      ];
+      if (d.pool) bullets.push("Pool tables for easy icebreakers");
+      else if (d.games) bullets.push("Games at the venue for easy icebreakers");
+      bullets.push("Our crew will welcome you and make introductions, whether it's your first Sapphic Weekly or you're a regular");
+      bullets.push("Come solo or bring friends - everyone is welcome");
+      bullets.push(price + ", " + age);
+      bullets.push("Location: " + address);
+      bullets.push('RSVP on <a href="' + partiful + '">Partiful to reserve your spot</a>');
+
+      var html = [
+        "<p>" + opener + " Join us " + dateTxt + " from " + timeDoTxt + " for a night open to the whole sapphic community: lesbian, bisexual, queer, trans, and nonbinary.</p>",
+        "",
+        "<h2>This Week's Lesbian Bar Pop-Up</h2>",
+        "<p>" + vibe + gameSentence + pastLink + "</p>",
+        "",
+        "<h2>What to Expect</h2>",
+        "<ul>",
+        bullets.map(function (b) { return "  <li>" + b + "</li>"; }).join("\n"),
+        "</ul>",
+        "",
+        "<h2>About Sapphic Weekly ATX</h2>",
+        '<p>Sapphic Weekly ATX is a lesbian social club in Austin that doubles as a rotating lesbian bar, popping up at a different venue every week. Learn more about <a href="' + LB + '">Austin\'s rotating lesbian bar</a>, see <a href="' + SITE + '">upcoming sapphic events in Austin</a>, and follow <a href="' + IG + '">@sapphicweeklyatx</a> for weekly updates.</p>'
+      ].join("\n");
+
+      return { html: html };
+    }
+
+    /* ----- Chamber ----- */
+    var gameSentenceCh = d.pool
+      ? " Grab a pool cue and challenge someone new to a game."
+      : d.games ? " Grab a friend (or make a new one) and jump into a game." : "";
+    if (hasPast) pastLink = ' See how <a href="' + esc(d.pastUrl) + '" target="_blank" rel="noopener noreferrer">' + pastText + "</a> went.";
+
+    var p1 = "<p>Austin's rotating lesbian bar is heading to <strong>" + venue + "</strong> on <strong>" + dateTxt + " from " + timeChTxt + "</strong>" +
+      (listingHasVenue ? "" : " for " + listing) + "! Come solo, leave with a friend, a group chat, or more!</p>";
+
+    var p2 = "<p>Join <strong>Sapphic Weekly ATX</strong>, Austin's lesbian social club, " +
+      (listingHasVenue ? "for " + listing : "at " + venue) + nb +
+      ". We're bringing together the whole sapphic community: lesbian, bisexual, queer, trans, and nonbinary, for a night of meeting new people and catching up with old friends." +
+      (free ? " <strong>FREE!</strong>" : "") + "</p>";
+
+    var p3 = "<p>" + vibe + gameSentenceCh + " Our crew will be there to welcome you and make introductions, whether it's your first Sapphic Weekly or you're a regular." + pastLink + "</p>";
+
+    var p4 = "<p>New to Austin, looking for more queer friends, or already know half the room? You're welcome here. Our weekly events are always newcomer and solo-friendly - stay for one drink or make a night of it.</p>";
+
+    var drinksLine = d.pool ? "Drinks + conversation + pool + good company"
+      : d.games ? "Drinks + conversation + games + good company"
+      : "Drinks + conversation + good company";
+    var priceLine = free ? "Free to attend, " + age : price + ", " + age;
+
+    var list = "<p>📍 " + venue + " - " + address + "<br>\n" +
+      "🌈 Open to the whole sapphic community<br>\n" +
+      "🍸 " + drinksLine + "<br>\n" +
+      "🎟️ " + priceLine + "</p>";
+
+    var rsvpText = free ? "Click to Save Your Spot - Free" : "Click to Save Your Spot";
+    var rsvp = '<p style="text-align:center;"><a href="' + partiful + '" target="_blank" rel="noopener noreferrer" style="font-size:30px;font-weight:bold;">' + rsvpText + "</a></p>";
+
+    var closer = "<p>Austin doesn't have a permanent lesbian bar, so we're making one every week. Learn how " +
+      '<a href="' + LB + '" target="_blank" rel="noopener noreferrer">Austin\'s rotating lesbian bar</a> works, and find more details on our ' +
+      '<a href="' + SITE + '/" target="_blank" rel="noopener noreferrer">website</a> and ' +
+      '<a href="' + IG + '" target="_blank" rel="noopener noreferrer">Instagram</a>.</p>';
+
+    return { html: [p1, "", p2, "", p3, "", p4, "", list, "", rsvp, "", closer].join("\n") };
+  }
+
+  function metaFor(d) {
+    var dateObj = parseDate(d.date);
+    var shortDate = dateObj ? fmtShortDate(dateObj) : "[Date]";
+    var listingName = d.listingName || "[Event listing name]";
+    var venueName = d.venue || "[Venue name]";
+    var listingHasVenue = d.listingName && d.venue &&
+      d.listingName.toLowerCase().indexOf(d.venue.toLowerCase()) !== -1;
+
+    var filename = "sapphic-weekly-atx-lesbian-bar-" + (d.venue ? slugify(d.venue) : "venue") + "-austin.jpg";
+    var alt = "Sapphic Weekly ATX lesbian bar pop-up poster for " + listingName +
+      (listingHasVenue ? "" : " at " + venueName) + ", Austin, " + shortDate;
+
+    var items = [];
+    if (state.mode === "do512") {
+      items.push({ label: "Suggested Do512 title", value: listingName, count: d.listingName ? d.listingName.length : 0, max: 60 });
+    } else {
+      var timeCh = fmtRange(d.start, d.end, "do512") || "[Time]";
+      var longDate = dateObj ? fmtLongDate(dateObj) : "[Date]";
+      var summary = "Join Sapphic Weekly ATX, Austin's lesbian social club and rotating lesbian bar, for " + listingName +
+        (listingHasVenue ? "" : " at " + venueName) + " on " + longDate + " from " + timeCh + ".";
+      items.push({ label: "Event name", value: listingName });
+      items.push({ label: "Summary field (if the form has one)", value: summary });
+    }
+    items.push({ label: "Poster file name", value: filename });
+    items.push({ label: "Poster alt text", value: alt });
+    return items;
+  }
+
+  function warningsFor(d) {
+    var w = [];
+    var missing = [];
+    if (!d.listingName) missing.push("listing name");
+    if (!d.venue) missing.push("venue");
+    if (!d.address) missing.push("address");
+    if (!d.partiful) missing.push("Partiful link");
+    if (!d.date) missing.push("date");
+    if (!d.vibe) missing.push("vibe");
+    if (missing.length) w.push("Still needed: " + missing.join(", ") + ".");
+    if (d.partiful && !/^https:\/\/(www\.)?partiful\.com\//i.test(d.partiful)) w.push("The Partiful link doesn't look like a partiful.com URL. Double-check it.");
+    if (state.mode === "do512" && d.listingName.length > 60) w.push("The title is over 60 characters, so Google may cut it off.");
+    if (/[—–]/.test(d.vibe)) w.push("The vibe text has an em or en dash. Swap it for a hyphen before publishing.");
+    if (/\blesbian bar\b/i.test(d.vibe)) w.push("The vibe text says \"lesbian bar.\" Make sure it doesn't suggest the venue itself is a lesbian bar - use \"rotating lesbian bar\" or \"pop-up\" only.");
+    var dateObj = parseDate(d.date);
+    if (dateObj) {
+      var today = new Date(); today.setHours(0, 0, 0, 0);
+      if (dateObj < today) w.push("That date is in the past.");
+    }
+    if (d.start && d.end && d.start >= d.end) w.push("The end time is before the start time. If the event runs past midnight, double-check the wording.");
+    if (d.pastUrl && !d.pastText) w.push("Add link text for the past hangout link, or it will read \"our last hangout.\"");
+    return w;
+  }
+
+  var CHECKLISTS = {
+    do512: [
+      "Paste the HTML into Do512's HTML box (\"Straight up HTML\") and click Preview Changes.",
+      "Use the suggested title above as the event title.",
+      "Select the venue's existing Do512 venue page from the dropdown. If it's missing, wait a few minutes after adding it or ask Casey to post it.",
+      "Set the price and age fields so they show at the top of the listing.",
+      "Point the Buy Tickets button to this event's Partiful link.",
+      "Upload the poster with the file name and alt text above.",
+      "After publishing, open the listing in a private window and check every link.",
+      "Ask the team to upvote it, and email Casey the link so it gets added to Gay.Do512."
+    ],
+    chamber: [
+      "Submit through the Chamber's Member Info Hub.",
+      "Click the </> button in the Description box, select everything, and replace it with the HTML.",
+      "Click after the first paragraph, press Enter, and upload the poster with the alt text above.",
+      "Use the event name and summary above in their fields.",
+      "Fill in the location fields with the full address, too.",
+      "Use the Partiful link as the event or registration URL.",
+      "Set the contact to info@sapphicweeklyatx.com and pick a social, community, or networking category.",
+      "Attach the event to the Sapphic Weekly ATX member profile if the form allows it.",
+      "After it's approved, open the live page in a private window and check the poster, links, and date."
+    ]
+  };
+
+  /* ================= RENDER ================= */
+  function render() {
+    var d = read();
+    var isDo = state.mode === "do512";
+
+    document.querySelectorAll(".mode-toggle button").forEach(function (b) {
+      b.setAttribute("aria-pressed", String(b.dataset.mode === state.mode));
+    });
+    $("outTitle").textContent = isDo ? "Do512 listing" : "Austin LGBT Chamber listing";
+    $("checkSub").textContent = isDo ? "Do512" : "Austin LGBT Chamber";
+    $("pasteHint").textContent = isDo
+      ? "Copy HTML, then paste it into Do512's HTML box. Use \"Copy with formatting\" only if you're pasting into the normal editor."
+      : "Copy HTML, then paste it into the Chamber editor's code view (</>), replacing everything. You don't need the DOCTYPE or <html> tags.";
+
+    // Warnings
+    var w = warningsFor(d);
+    $("warnings").innerHTML = w.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("");
+
+    // Meta
+    $("metaGrid").innerHTML = metaFor(d).map(function (it, i) {
+      var count = "";
+      if (it.max) {
+        count = '<span class="count' + (it.count > it.max ? " over" : "") + '">' + it.count + "/" + it.max + "</span>";
+      }
+      return '<div class="meta-item"><div class="label"><span>' + esc(it.label) + "</span>" +
+        '<span style="display:flex;gap:8px;align-items:center;">' + count +
+        '<button type="button" class="btn small secondary" data-copy-meta="' + i + '">Copy</button></span></div>' +
+        '<div class="value" data-meta-value="' + i + '">' + esc(it.value) + "</div></div>";
+    }).join("");
+
+    // Output
+    var out = build(d, false);
+    var prev = build(d, true);
+    var pane = $("previewPane");
+    pane.className = "preview " + (isDo ? "do512" : "chamber");
+    pane.innerHTML = prev.html;
+    $("htmlPane").textContent = out.html;
+
+    // Tabs
+    document.querySelectorAll(".tab").forEach(function (t) {
+      t.setAttribute("aria-selected", String(t.dataset.tab === state.tab));
+    });
+    $("previewPane").hidden = state.tab !== "preview";
+    $("htmlPane").hidden = state.tab !== "html";
+
+    // Checklist
+    $("checklist").innerHTML = CHECKLISTS[state.mode].map(function (item, i) {
+      var id = "chk-" + state.mode + "-" + i;
+      return '<li><input type="checkbox" id="' + id + '"><label for="' + id + '">' + esc(item) + "</label></li>";
+    }).join("");
+
+    // Yes/No toggles
+    setYN("gamesYN", state.games);
+    setYN("poolYN", state.pool);
+    $("poolField").hidden = !state.games;
+  }
+
+  function setYN(id, val) {
+    $(id).querySelectorAll("button").forEach(function (b) {
+      b.setAttribute("aria-pressed", String((b.dataset.val === "yes") === val));
+    });
+  }
+
+  /* ================= COPY ================= */
+  function toast(msg) {
+    var t = $("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    clearTimeout(toast._t);
+    toast._t = setTimeout(function () { t.classList.remove("show"); }, 1800);
+  }
+  function fallbackCopy(text) {
+    var ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    var ok = false;
+    try { ok = document.execCommand("copy"); } catch (e) {}
+    document.body.removeChild(ta);
+    return ok;
+  }
+  function copyText(text, msg) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { toast(msg); }, function () {
+        toast(fallbackCopy(text) ? msg : "Couldn't copy. Select and copy manually.");
+      });
+    } else {
+      toast(fallbackCopy(text) ? msg : "Couldn't copy. Select and copy manually.");
+    }
+  }
+  function copyRich(html) {
+    var tmp = document.createElement("div");
+    tmp.innerHTML = html;
+    var plain = tmp.innerText;
+    if (window.ClipboardItem && navigator.clipboard && navigator.clipboard.write) {
+      var item = new ClipboardItem({
+        "text/html": new Blob([html], { type: "text/html" }),
+        "text/plain": new Blob([plain], { type: "text/plain" })
+      });
+      navigator.clipboard.write([item]).then(function () { toast("Copied with formatting"); }, function () {
+        copyText(plain, "Copied as plain text");
+      });
+    } else {
+      copyText(plain, "Copied as plain text");
+    }
+  }
+
+  /* ================= EVENTS ================= */
+  inputIds.forEach(function (id) {
+    $(id).addEventListener("input", render);
+    $(id).addEventListener("change", render);
+  });
+
+  document.querySelectorAll(".mode-toggle button").forEach(function (b) {
+    b.addEventListener("click", function () {
+      state.mode = b.dataset.mode;
+      try { localStorage.setItem("swatx_listing_gen_mode", state.mode); } catch (e) {}
+      render();
+    });
+  });
+
+  document.querySelectorAll(".tab").forEach(function (t) {
+    t.addEventListener("click", function () { state.tab = t.dataset.tab; render(); });
+  });
+
+  $("gamesYN").addEventListener("click", function (e) {
+    var b = e.target.closest("button"); if (!b) return;
+    state.games = b.dataset.val === "yes";
+    if (!state.games) state.pool = false;
+    render();
+  });
+  $("poolYN").addEventListener("click", function (e) {
+    var b = e.target.closest("button"); if (!b) return;
+    state.pool = b.dataset.val === "yes";
+    render();
+  });
+
+  $("copyHtml").addEventListener("click", function () {
+    copyText(build(read(), false).html, "HTML copied");
+  });
+  $("copyRich").addEventListener("click", function () {
+    copyRich(build(read(), false).html);
+  });
+
+  $("metaGrid").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-copy-meta]"); if (!b) return;
+    var v = document.querySelector('[data-meta-value="' + b.dataset.copyMeta + '"]');
+    if (v) copyText(v.textContent, "Copied");
+  });
+
+  $("resetBtn").addEventListener("click", function () {
+    inputIds.forEach(function (id) { $(id).value = ""; });
+    $("start").value = "20:00";
+    $("end").value = "22:00";
+    $("price").value = "Free";
+    $("age").value = "21+";
+    state.games = false;
+    state.pool = false;
+    render();
+    toast("Form cleared");
+  });
+
+  if (unlocked) unlock();
+})();
+</script>
+</body>
+</html>
