@@ -48,8 +48,9 @@
 
   .mode-toggle {
     display: inline-flex;
+    flex-wrap: wrap;
     background: #2a2a2a;
-    border-radius: 999px;
+    border-radius: 22px;
     padding: 4px;
     gap: 4px;
   }
@@ -118,6 +119,14 @@
     border-color: var(--pink);
   }
   .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .field.picker {
+    background: #FFF0F8;
+    border: 1px solid #F7C6E1;
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 18px;
+  }
+  .field.picker select { border-color: var(--pink); }
   .req { color: var(--pink-dark); }
 
   .yn { display: inline-flex; border: 1px solid #d8c3cf; border-radius: 8px; overflow: hidden; }
@@ -145,6 +154,7 @@
     background: var(--pink);
     color: #fff;
   }
+  .btn[hidden] { display: none; }
   .btn.secondary { background: #fff; color: var(--ink); border: 1px solid #d8c3cf; }
   .btn.small { padding: 6px 12px; font-size: 12.5px; }
   .btn:active { transform: translateY(1px); }
@@ -282,11 +292,13 @@
   <header class="top">
     <div>
       <h1>Sapphic Weekly ATX <span>Listing Generator</span></h1>
-      <div class="sub">SEO-ready descriptions for Do512 and the Austin LGBT Chamber of Commerce</div>
+      <div class="sub">SEO-ready descriptions for Do512, the Austin LGBT Chamber of Commerce, Meetup, and Eventbrite</div>
     </div>
     <div class="mode-toggle" role="group" aria-label="Listing platform">
       <button type="button" data-mode="do512" aria-pressed="true">Do512</button>
       <button type="button" data-mode="chamber" aria-pressed="false">Austin LGBT Chamber</button>
+      <button type="button" data-mode="meetup" aria-pressed="false">Meetup</button>
+      <button type="button" data-mode="eventbrite" aria-pressed="false">Eventbrite</button>
     </div>
   </header>
   <div class="notice">PROPRIETARY - internal tool for Sapphic Weekly ATX organizers. Please don't share outside the team.</div>
@@ -296,6 +308,14 @@
     <section>
       <div class="card">
         <h2>Event details</h2>
+
+        <div class="field picker">
+          <label for="eventPick">Pick an upcoming event</label>
+          <select id="eventPick" disabled>
+            <option value="">Loading events...</option>
+          </select>
+          <div class="hint" id="pickStatus">Fills in the name, venue, address, date, times, and Partiful link from the website.</div>
+        </div>
 
         <div class="field">
           <label for="listingName">Event listing name <span class="req">*</span></label>
@@ -445,6 +465,7 @@
     document.getElementById("gate").remove();
     document.getElementById("app").hidden = false;
     render();
+    loadEvents();
   }
 
   var unlocked = false;
@@ -472,7 +493,7 @@
   var state = { mode: "do512", tab: "preview", games: false, pool: false };
   try {
     var savedMode = localStorage.getItem("swatx_listing_gen_mode");
-    if (savedMode === "do512" || savedMode === "chamber") state.mode = savedMode;
+    if (["do512", "chamber", "meetup", "eventbrite"].indexOf(savedMode) !== -1) state.mode = savedMode;
   } catch (e) {}
 
   var $ = function (id) { return document.getElementById(id); };
@@ -620,6 +641,60 @@
       return { html: html };
     }
 
+    /* ----- Meetup and Eventbrite (pasted as formatted text) ----- */
+    if (state.mode === "meetup" || state.mode === "eventbrite") {
+      var WHO = "the whole sapphic community: lesbian, bisexual, queer, trans, and nonbinary";
+      var expect = d.games
+        ? "Expect drinks, games, and a night of meeting new people."
+        : "Expect drinks, good conversations, and a night of meeting new people.";
+      var priceAge = free ? "Free to attend, " + age : price + ", " + age;
+      var drinksBullet = d.pool ? "🍸 Drinks + pool + good company"
+        : d.games ? "🍸 Drinks + games + good company" : "🍸 Drinks + good company";
+      var forListing = "for <strong>" + listing + "</strong>" + (listingHasVenue ? "" : " at " + venue);
+      var facts = "<p><strong>📍 " + venue + " - " + address + "</strong><br>\n" +
+        "<strong>🌈 Open to the whole sapphic community</strong><br>\n" +
+        "<strong>" + drinksBullet + "</strong><br>\n" +
+        "<strong>🎟️ " + priceAge + "</strong></p>";
+      var welcome = "Whether you're new to Austin, looking to make more queer friends, or already know half the room, you're welcome here. " +
+        "Our socials are always <strong>newcomer and solo-friendly</strong> - stay for one drink or make a night of it.";
+
+      if (state.mode === "meetup") {
+        var convo = d.pool ? "Grab a pool cue, order a drink, and start a conversation."
+          : "Grab a drink, pull up a chair, and start a conversation.";
+        var meetupHtml = [
+          "<p>Austin's rotating lesbian bar is at " + venue + nb + " this week! 🌈🍸 Come solo, leave with a friend, a group chat, or more.</p>",
+          "<p>Join <strong>Sapphic Weekly ATX</strong>, Austin's lesbian social club, " + forListing + ". " + expect + " We're bringing together " + WHO + ".</p>",
+          "<p>" + vibe + "</p>",
+          "<p>No agenda, no awkward networking. " + convo + " " + welcome + "</p>",
+          '<p><strong>RSVP 👉 <a href="' + partiful + '">' + listing + " on Partiful</a></strong></p>",
+          facts,
+          "<p>Austin doesn't have a permanent lesbian bar, so we're making one every week. Learn how " +
+            '<a href="' + LB + '">Austin\'s rotating lesbian bar</a> works, and find more details on our ' +
+            '<a href="' + SITE + '/">website</a> and <a href="' + IG + '">Instagram</a>.</p>'
+        ];
+        return { html: meetupHtml.join("\n\n") };
+      }
+
+      // Eventbrite: same shape as the drafts the eventbrite-sync script creates.
+      // RSVPs happen on Eventbrite, so there's no Partiful link.
+      var gameSentenceEb = vibeHasGames ? "" : d.pool
+        ? " Grab a pool cue and challenge someone new to a game."
+        : d.games ? " Grab a friend (or make a new one) and jump into a game." : "";
+      var ebHtml = [
+        "<p>Austin doesn't have a permanent lesbian bar, so we're making one every week. On " + dateTxt +
+          ", Austin's rotating lesbian bar is pulling up at " + venue + "! 🌈🍸</p>",
+        "<p>Join <strong>Sapphic Weekly ATX</strong>, Austin's lesbian social club, " + forListing + nb + ". " + expect +
+          " We're bringing together " + WHO + ".</p>",
+        "<p>" + vibe + gameSentenceEb + "</p>",
+        "<p>No agenda, no awkward networking. " + welcome + "</p>",
+        facts,
+        '<p>Learn how <a href="' + LB + '">Austin\'s rotating lesbian bar</a> works, see ' +
+          '<a href="' + SITE + '/">upcoming sapphic events in Austin</a>, and follow ' +
+          '<a href="' + IG + '">@sapphicweeklyatx</a> on Instagram.</p>'
+      ];
+      return { html: ebHtml.join("\n\n") };
+    }
+
     /* ----- Chamber ----- */
     var gameSentenceCh = vibeHasGames ? "" : d.pool
       ? " Grab a pool cue and challenge someone new to a game."
@@ -673,6 +748,15 @@
     var items = [];
     if (state.mode === "do512") {
       items.push({ label: "Suggested Do512 title", value: listingName, count: d.listingName ? d.listingName.length : 0, max: 60 });
+    } else if (state.mode === "meetup") {
+      items.push({ label: "Event title", value: listingName });
+    } else if (state.mode === "eventbrite") {
+      var priceAgeShort = (isFree(d.price || "Free") ? "Free" : (d.price || "Free")) + ", " + (d.age || "21+");
+      var sum = "Austin's rotating lesbian bar pops up at " + venueName + (listingHasVenue ? "" : " for " + listingName) +
+        "! Meet new queer friends over drinks. " + priceAgeShort + ".";
+      if (sum.length > 140) sum = "Austin's rotating lesbian bar pops up at " + venueName + "! Meet new queer friends. " + priceAgeShort + ".";
+      items.push({ label: "Event title", value: listingName });
+      items.push({ label: "Summary (140 characters max)", value: sum, count: sum.length, max: 140 });
     } else {
       var timeCh = fmtRange(d.start, d.end, "do512") || "[Time]";
       var longDate = dateObj ? fmtLongDate(dateObj) : "[Date]";
@@ -731,6 +815,22 @@
       "Set the contact to info@sapphicweeklyatx.com and pick a social, community, or networking category.",
       "Attach the event to the Sapphic Weekly ATX member profile if the form allows it.",
       "After it's approved, open the live page in a private window and check the poster, links, and date."
+    ],
+    meetup: [
+      "Click \"Copy with formatting\" and paste into Meetup's event description.",
+      "Use the event title above, and set the date, time, and venue in Meetup's own fields.",
+      "Check that the bold text and all four links survived the paste.",
+      "Upload the poster with the file name above.",
+      "After publishing, open the event in a private window and check the Partiful and website links."
+    ],
+    eventbrite: [
+      "Only use this when the eventbrite-sync script skipped the event. Check your Eventbrite drafts first so you don't make a duplicate.",
+      "Use the event title and summary above.",
+      "Click \"Copy with formatting\" and paste into the Overview section.",
+      "Set the date, time, and venue, and add a free ticket (100 spots, max 10 per order).",
+      "Set the category to Community & Culture, subcategory LGBT, and set the age to 21+.",
+      "Upload the designed Eventbrite flyer, then publish.",
+      "After publishing, open the listing in a private window and check the links."
     ]
   };
 
@@ -738,15 +838,23 @@
   function render() {
     var d = read();
     var isDo = state.mode === "do512";
+    var isRich = state.mode === "meetup" || state.mode === "eventbrite";
+    var NAMES = { do512: "Do512", chamber: "Austin LGBT Chamber", meetup: "Meetup", eventbrite: "Eventbrite" };
+    var HINTS = {
+      do512: "Copy HTML, then paste it into Do512's HTML box. Use \"Copy with formatting\" only if you're pasting into the normal editor.",
+      chamber: "Copy HTML, then paste it into the Chamber editor's code view (</>), replacing everything. You don't need the DOCTYPE or <html> tags.",
+      meetup: "Click \"Copy with formatting\" and paste it into Meetup's description box. Bold text and links come across.",
+      eventbrite: "Click \"Copy with formatting\" and paste it into Eventbrite's Overview. Use this only when the sync skipped an event."
+    };
 
     document.querySelectorAll(".mode-toggle button").forEach(function (b) {
       b.setAttribute("aria-pressed", String(b.dataset.mode === state.mode));
     });
-    $("outTitle").textContent = isDo ? "Do512 listing" : "Austin LGBT Chamber listing";
-    $("checkSub").textContent = isDo ? "Do512" : "Austin LGBT Chamber";
-    $("pasteHint").textContent = isDo
-      ? "Copy HTML, then paste it into Do512's HTML box. Use \"Copy with formatting\" only if you're pasting into the normal editor."
-      : "Copy HTML, then paste it into the Chamber editor's code view (</>), replacing everything. You don't need the DOCTYPE or <html> tags.";
+    $("outTitle").textContent = NAMES[state.mode] + " listing";
+    $("checkSub").textContent = NAMES[state.mode];
+    $("pasteHint").textContent = HINTS[state.mode];
+    $("copyHtml").hidden = isRich;
+    $("copyRich").classList.toggle("secondary", !isRich);
 
     // Warnings
     var w = warningsFor(d);
@@ -768,7 +876,7 @@
     var out = build(d, false);
     var prev = build(d, true);
     var pane = $("previewPane");
-    pane.className = "preview " + (isDo ? "do512" : "chamber");
+    pane.className = "preview " + state.mode;
     pane.innerHTML = prev.html;
     $("htmlPane").textContent = out.html;
 
@@ -843,6 +951,90 @@
     }
   }
 
+  /* ================= AUTOFILL FROM WEBSITE =================
+     events.json is refreshed from sapphicweeklyatx.com by the
+     "Refresh events" GitHub Action in this repo. */
+  var EVENTS = [];
+  var NBHD_KEY = "swatx_listing_gen_neighborhoods";
+
+  function loadNeighborhoods() {
+    try { return JSON.parse(localStorage.getItem(NBHD_KEY) || "{}") || {}; } catch (e) { return {}; }
+  }
+  function saveNeighborhood(venue, nbhd) {
+    if (!venue || !nbhd) return;
+    try {
+      var map = loadNeighborhoods();
+      map[venue.trim().toLowerCase()] = nbhd.trim();
+      localStorage.setItem(NBHD_KEY, JSON.stringify(map));
+    } catch (e) {}
+  }
+
+  function fmtUpdated(iso) {
+    var d = new Date(iso);
+    if (isNaN(d)) return "";
+    return d.toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+  }
+
+  function loadEvents() {
+    var pick = $("eventPick");
+    var status = $("pickStatus");
+    fetch("events.json", { cache: "no-store" })
+      .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then(function (data) {
+        var today = new Date(); today.setHours(0, 0, 0, 0);
+        EVENTS = (data.events || []).filter(function (e) {
+          var d = parseDate(e.date);
+          return d && d >= today;
+        });
+        if (!EVENTS.length) {
+          pick.innerHTML = '<option value="">No upcoming events found</option>';
+          status.textContent = "Add the event on the website, then run \"Refresh events\" in GitHub Actions. Or fill in the fields by hand.";
+          return;
+        }
+        pick.innerHTML = '<option value="">Choose an event...</option>' + EVENTS.map(function (e, i) {
+          var d = parseDate(e.date);
+          var label = e.title + (d ? " - " + MONTHS[d.getMonth()].slice(0, 3) + " " + d.getDate() : "");
+          return '<option value="' + i + '">' + esc(label) + "</option>";
+        }).join("");
+        pick.disabled = false;
+        var when = fmtUpdated(data.updated);
+        status.textContent = "Fills in the name, venue, address, date, times, and Partiful link from the website." +
+          (when ? " List last updated " + when + "." : "");
+      })
+      .catch(function () {
+        pick.innerHTML = '<option value="">Event list unavailable</option>';
+        status.textContent = "Couldn't load the event list. Fill in the fields by hand, or run \"Refresh events\" in GitHub Actions.";
+      });
+  }
+
+  function fillFromEvent(e) {
+    $("listingName").value = e.title || "";
+    $("venue").value = e.venue || "";
+    $("address").value = e.address || "";
+    $("partiful").value = e.partiful || "";
+    $("date").value = e.date || "";
+    if (e.start) $("start").value = e.start;
+    if (e.end) $("end").value = e.end;
+    var remembered = loadNeighborhoods()[(e.venue || "").trim().toLowerCase()];
+    $("nbhd").value = remembered || "";
+    render();
+
+    var missing = [];
+    if (!e.partiful) missing.push("Partiful link");
+    if (!e.address) missing.push("address");
+    if (!remembered) missing.push("neighborhood");
+    toast(missing.length ? "Filled in. Still add: " + missing.join(", ") : "Filled in from the website");
+  }
+
+  $("eventPick").addEventListener("change", function () {
+    var e = EVENTS[Number(this.value)];
+    if (this.value !== "" && e) fillFromEvent(e);
+  });
+
+  $("nbhd").addEventListener("change", function () {
+    saveNeighborhood($("venue").value, $("nbhd").value);
+  });
+
   /* ================= EVENTS ================= */
   inputIds.forEach(function (id) {
     $(id).addEventListener("input", render);
@@ -894,6 +1086,7 @@
     $("age").value = "21+";
     state.games = false;
     state.pool = false;
+    $("eventPick").value = "";
     render();
     toast("Form cleared");
   });
