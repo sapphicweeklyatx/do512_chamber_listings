@@ -1,0 +1,35 @@
+name: Refresh events
+
+on:
+  schedule:
+    - cron: "23 * * * *"   # every hour at :23 (GitHub may run it later when busy)
+  workflow_dispatch:         # adds a "Run workflow" button in the Actions tab
+
+permissions:
+  contents: write            # lets the run save events.json back to the repo
+
+concurrency:
+  group: refresh-events
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Read upcoming events from the website
+        run: python3 fetch_events.py
+
+      - name: Save events.json
+        run: |
+          if [ -n "$(git status --porcelain events.json)" ]; then
+            git config user.name "refresh-events"
+            git config user.email "actions@users.noreply.github.com"
+            git add events.json
+            git commit -m "Update upcoming events"
+            git push
+          else
+            echo "events.json unchanged"
+          fi
