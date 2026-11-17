@@ -77,7 +77,13 @@ def main():
 
     feed = load_feed(args.feed_file)
     now_ms = time.time() * 1000
-    upcoming = [e for e in feed.get("upcoming", []) if (e.get("startDate") or 0) > now_ms]
+    # Keep events until 12 hours after they end, so tonight's event stays listed during the event
+    # (the video upload page uses this list too)
+    keep_after = now_ms - 12 * 3600 * 1000
+    upcoming = [e for e in feed.get("upcoming", []) + feed.get("past", [])
+                if (e.get("endDate") or e.get("startDate") or 0) > keep_after]
+    seen = set()
+    upcoming = [e for e in upcoming if not (e.get("id") in seen or seen.add(e.get("id")))]
     upcoming.sort(key=lambda e: e["startDate"])
     events = [simplify(e) for e in upcoming]
 
