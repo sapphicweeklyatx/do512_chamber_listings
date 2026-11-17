@@ -132,8 +132,6 @@
   .yn button[aria-pressed="true"] { background: var(--ink); color: #fff; }
   .yn button + button { border-left: 1px solid #d8c3cf; }
 
-  details.optional { border-top: 1px dashed var(--line); padding-top: 12px; margin-top: 6px; }
-  details.optional summary { cursor: pointer; font-weight: 600; font-size: 14px; color: var(--purple); margin-bottom: 10px; }
 
   .btn {
     display: inline-flex;
@@ -317,6 +315,12 @@
         </div>
 
         <div class="field">
+          <label for="nbhd">Neighborhood <span class="req">*</span></label>
+          <input id="nbhd" type="text" placeholder="e.g., North Loop, East Austin">
+          <div class="hint">Reads as "in North Loop." Use the same name as your other listings for this venue.</div>
+        </div>
+
+        <div class="field">
           <label for="partiful">Partiful link <span class="req">*</span></label>
           <input id="partiful" type="url" placeholder="https://partiful.com/e/...">
           <div class="hint">The link for this specific event.</div>
@@ -360,7 +364,7 @@
             <button type="button" data-val="yes" aria-pressed="false">Yes</button>
             <button type="button" data-val="no" aria-pressed="true">No</button>
           </div>
-          <div class="hint">Yard games count.</div>
+          <div class="hint">Yard games count. If your vibe already mentions the games, the description won't repeat them.</div>
         </div>
 
         <div class="field" id="poolField" hidden>
@@ -377,24 +381,6 @@
           <textarea id="vibe" placeholder="1-2 sentences, written fresh each week. Inserted word for word."></textarea>
           <div class="hint">This goes into the description exactly as typed, so describe the venue only, not "a lesbian bar on X."</div>
         </div>
-
-        <details class="optional">
-          <summary>Optional extras</summary>
-          <div class="field">
-            <label for="nbhd">Neighborhood</label>
-            <input id="nbhd" type="text" placeholder="e.g., North Loop, East Austin">
-            <div class="hint">Reads as "in North Loop." Helps local search.</div>
-          </div>
-          <div class="field">
-            <label for="pastUrl">Past hangout link</label>
-            <input id="pastUrl" type="url" placeholder="https://www.sapphicweeklyatx.com/past-hangouts/...">
-          </div>
-          <div class="field">
-            <label for="pastText">Past hangout link text</label>
-            <input id="pastText" type="text" placeholder="e.g., our night at Barfly's">
-            <div class="hint">Descriptive words get linked (better for SEO than "iykyk").</div>
-          </div>
-        </details>
 
         <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;">
           <button type="button" class="btn secondary" id="resetBtn">Clear form</button>
@@ -490,7 +476,10 @@
   } catch (e) {}
 
   var $ = function (id) { return document.getElementById(id); };
-  var inputIds = ["listingName", "venue", "address", "partiful", "date", "start", "end", "price", "age", "vibe", "nbhd", "pastUrl", "pastText"];
+  var inputIds = ["listingName", "venue", "address", "nbhd", "partiful", "date", "start", "end", "price", "age", "vibe"];
+
+  // True when the vibe text already mentions games, so the generated games sentence is skipped.
+  var GAME_WORDS = /\b(games?|darts?|pool tables?|pool cues?|game of pool|play pool|shoot pool|billiards|cornhole|shuffleboard|ping[- ]?pong|foosball|skee[- ]?ball|pinball|arcade|jenga|trivia|bowling)\b/i;
 
   /* ================= HELPERS ================= */
   function esc(s) {
@@ -583,24 +572,20 @@
     var free = isFree(priceRaw);
     var age = esc(d.age || "21+");
     var partiful = d.partiful ? esc(d.partiful) : "#";
-    var nb = d.nbhd ? " in " + esc(d.nbhd) : "";
+    var nb = " in " + V(d.nbhd, "Neighborhood");
+    var vibeHasGames = GAME_WORDS.test(d.vibe);
 
     var listingHasVenue = d.listingName && d.venue &&
       d.listingName.toLowerCase().indexOf(d.venue.toLowerCase()) !== -1;
-
-    var pastLink = "";
-    var hasPast = !!d.pastUrl;
-    var pastText = esc(d.pastText || "our last hangout");
 
     var SITE = "https://www.sapphicweeklyatx.com";
     var LB = SITE + "/lesbian-bar-austin";
     var IG = "https://www.instagram.com/sapphicweeklyatx";
 
     if (state.mode === "do512") {
-      var gameSentence = d.pool
+      var gameSentence = vibeHasGames ? "" : d.pool
         ? " Rack up a game of pool and meet someone new over the table."
         : d.games ? " There will be games at the venue too, so come ready to play and meet someone new." : "";
-      if (hasPast) pastLink = ' Catch the recap from <a href="' + esc(d.pastUrl) + '">' + pastText + "</a>.";
 
       var opener = listingHasVenue
         ? "Sapphic Weekly ATX, Austin's lesbian social club and rotating lesbian bar, is hosting <strong>" + listing + "</strong>" + nb + "."
@@ -621,7 +606,7 @@
         "<p>" + opener + " Join us " + dateTxt + " from " + timeDoTxt + " for a night open to the whole sapphic community: lesbian, bisexual, queer, trans, and nonbinary.</p>",
         "",
         "<h2>This Week's Lesbian Bar Pop-Up</h2>",
-        "<p>" + vibe + gameSentence + pastLink + "</p>",
+        "<p>" + vibe + gameSentence + "</p>",
         "",
         "<h2>What to Expect</h2>",
         "<ul>",
@@ -636,10 +621,9 @@
     }
 
     /* ----- Chamber ----- */
-    var gameSentenceCh = d.pool
+    var gameSentenceCh = vibeHasGames ? "" : d.pool
       ? " Grab a pool cue and challenge someone new to a game."
       : d.games ? " Grab a friend (or make a new one) and jump into a game." : "";
-    if (hasPast) pastLink = ' See how <a href="' + esc(d.pastUrl) + '" target="_blank" rel="noopener noreferrer">' + pastText + "</a> went.";
 
     var p1 = "<p>Austin's rotating lesbian bar is heading to <strong>" + venue + "</strong> on <strong>" + dateTxt + " from " + timeChTxt + "</strong>" +
       (listingHasVenue ? "" : " for " + listing) + "! Come solo, leave with a friend, a group chat, or more!</p>";
@@ -649,7 +633,7 @@
       ". We're bringing together the whole sapphic community: lesbian, bisexual, queer, trans, and nonbinary, for a night of meeting new people and catching up with old friends." +
       (free ? " <strong>FREE!</strong>" : "") + "</p>";
 
-    var p3 = "<p>" + vibe + gameSentenceCh + " Our crew will be there to welcome you and make introductions, whether it's your first Sapphic Weekly or you're a regular." + pastLink + "</p>";
+    var p3 = "<p>" + vibe + gameSentenceCh + " Our crew will be there to welcome you and make introductions, whether it's your first Sapphic Weekly or you're a regular.</p>";
 
     var p4 = "<p>New to Austin, looking for more queer friends, or already know half the room? You're welcome here. Our weekly events are always newcomer and solo-friendly - stay for one drink or make a night of it.</p>";
 
@@ -708,6 +692,7 @@
     if (!d.listingName) missing.push("listing name");
     if (!d.venue) missing.push("venue");
     if (!d.address) missing.push("address");
+    if (!d.nbhd) missing.push("neighborhood");
     if (!d.partiful) missing.push("Partiful link");
     if (!d.date) missing.push("date");
     if (!d.vibe) missing.push("vibe");
@@ -722,7 +707,6 @@
       if (dateObj < today) w.push("That date is in the past.");
     }
     if (d.start && d.end && d.start >= d.end) w.push("The end time is before the start time. If the event runs past midnight, double-check the wording.");
-    if (d.pastUrl && !d.pastText) w.push("Add link text for the past hangout link, or it will read \"our last hangout.\"");
     return w;
   }
 
