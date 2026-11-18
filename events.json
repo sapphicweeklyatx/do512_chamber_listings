@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-17T02:28:44Z",
+  "updated": "2026-11-18T02:58:17Z",
   "events": [
     {
       "id": "6ae1094655ba587a51cb609a",
@@ -33,6 +33,17 @@
       "end": "22:00",
       "partiful": "https://partiful.com/e/gBi8Qs2ObEaTQ8I87xXX",
       "url": "https://www.sapphicweeklyatx.com/upcoming-events/lesbian-night-golden-hour-golden-horn-austin"
+    },
+    {
+      "id": "6afbff9630d84548b29c1f10",
+      "title": "SLEIGH GIRL: SAPPHIC NIGHT AT MOLA",
+      "venue": "Mola",
+      "address": "1007 East 7th Street, Austin, TX 78702",
+      "date": "2026-12-17",
+      "start": "20:00",
+      "end": "22:00",
+      "partiful": "https://partiful.com/e/VAMVmR5BqniFrZa8kFAm",
+      "url": "https://www.sapphicweeklyatx.com/upcoming-events/sleigh-girl-sapphic-night-mola"
     }
   ]
 }
